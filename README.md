@@ -41,15 +41,9 @@ Traffic-Analyzer/
    git clone https://github.com/your-username/Traffic-Analyzer.git
 
 
-2. Navigate to the project directory:
+2. Navigate to the project directory: cd Traffic-Analyzer
 
-cd Traffic-Analyzer
+3. Install the required dependencies: pip install -r requirements.txt
 
-3. Install the required dependencies:
-
-pip install -r requirements.txt
-
-4. Run the Streamlit app:
-
-streamlit run app/streamlit_app.py
+4. Run the Streamlit app: streamlit run app/streamlit_app.py
 
