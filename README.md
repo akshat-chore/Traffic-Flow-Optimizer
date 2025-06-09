@@ -13,7 +13,7 @@ An AI-powered ML project that analyzes and predicts traffic congestion using Ran
 
 ---
 
-Models Used
+🧠 Models Used
 Random Forest Regressor
 XGBoost Regressor
 
