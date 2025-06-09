@@ -17,6 +17,21 @@ An AI-powered ML project that analyzes and predicts traffic congestion using Ran
 Random Forest Regressor
 XGBoost Regressor
 
+## 📷 Output Screenshots
+
+Here are some screenshots of the Traffic Analyzer app in action:
+
+### 🖥️ Dashboard View
+![Dashboard](images/dashboard.png)
+
+### 📈 Congestion Prediction
+![Prediction](images/prediction.png)
+
+### 🌍 Map-Based Visualization
+![Map](images/maps.png)
+
+### 🖥️ Summary
+![Map](images/summary.png)
 
 
 ## 🔧 How to Run the App
