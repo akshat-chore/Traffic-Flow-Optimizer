@@ -18,20 +18,6 @@ Random Forest Regressor
 XGBoost Regressor
 
 
-Traffic-Analyzer/
-│
-├── app/
-│   └── streamlit_app.py         # Main Streamlit application
-│
-├── data/
-│   ├── traffic_data.csv         # Historical traffic dataset
-│
-├── models/
-│   ├── rf_model.pkl             # Trained Random Forest model
-│   └── xgb_model.pkl            # Trained XGBoost model
-│
-├── requirements.txt
-└── README.md
 
 ## 🔧 How to Run the App
 
