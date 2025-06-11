@@ -1,6 +1,11 @@
-# 🚦 Traffic Analyzer
 
-An AI-powered ML project that analyzes and predicts traffic congestion using Random Forest and XGBoost. It leverages historical and real-time data to help optimize traffic flow and improve urban mobility.
+# 🚦 AI-Powered Traffic Flow Optimizer
+
+🧠 **Live App**: [Click here to try it](https://traffic-flow-optimizer-akshat.streamlit.app)
+
+An AI-powered ML that project uses real-world traffic data to predict congestion levels using Random Forest and XGBoost, and displays results interactively using Streamlit and Folium. It leverages historical and real-time data to help optimize traffic flow and improve urban mobility.
+
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://traffic-flow-optimizer-akshat.streamlit.app)
 
 ---
 
