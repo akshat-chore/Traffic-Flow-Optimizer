@@ -12,13 +12,30 @@ from streamlit_folium import st_folium
 
 st.set_page_config(page_title="AI Traffic Optimizer", layout="wide")
 st.title("🚦 AI-Powered Traffic Flow Optimizer")
-st.markdown("Make informed traffic decisions using machine learning models and visual insights.")
+
+# --- Caching Optimized ---
+@st.cache_data(ttl=600)
+def load_data(file):
+    return pd.read_csv(file)
+
+# --- Sample Dataset Download ---
+with st.expander("📁 Download a sample dataset to try the app"):
+    try:
+        sample_df = load_data("data/xmap_traffic_data.csv")
+        st.download_button(
+            "📥 Download Sample Dataset",
+            data=sample_df.to_csv(index=False),
+            file_name="sample_traffic_dataset.csv",
+            mime="text/csv"
+        )
+    except Exception:
+        st.error("🚫 Sample dataset not found. Ensure it exists at 'data/xmap_traffic_data.csv'.")
 
 # --- Upload CSV ---
 uploaded_file = st.file_uploader("📁 Upload your traffic dataset (.csv)", type="csv")
 
 if uploaded_file:
-    df = pd.read_csv(uploaded_file)
+    df = load_data(uploaded_file)
     df['Timestamp'] = pd.to_datetime(df['Timestamp'])
 
     # --- Sidebar Filters ---
@@ -33,6 +50,7 @@ if uploaded_file:
     df['Hour'] = df['Timestamp'].dt.hour
     df['DayOfWeek'] = df['Timestamp'].dt.dayofweek
     df['Is_Weekend'] = df['DayOfWeek'].isin([5, 6]).astype(int)
+
     le = LabelEncoder()
     df['Congestion_Label'] = le.fit_transform(df['Congestion_Level'])
 
@@ -45,48 +63,38 @@ if uploaded_file:
 
     st.markdown("### 📊 Filtered Data")
     st.write(f"Records Found: {filtered_df.shape[0]}")
-    st.dataframe(filtered_df.head())
+    st.dataframe(filtered_df.head(10))  # Limit rows for faster UI rendering
 
-    # --- Condition Checks ---
-    if filtered_df.shape[0] < 3:
-        st.warning("⚠️ Very few records — predictions may be less reliable.")
-        show_predictions = True
-    elif filtered_df['Congestion_Level'].nunique() < 2:
-        st.warning("⚠️ Only one class present. Models need variety to train.")
-        show_predictions = False
-    else:
-        show_predictions = True
-
-    # --- ML and Visualizations ---
-    if show_predictions:
+    # --- ML Predictions ---
+    if filtered_df.shape[0] >= 3 and filtered_df['Congestion_Level'].nunique() > 1:
         features = ['Hour', 'DayOfWeek', 'Is_Weekend', 'City', 'Road_Name', 'Direction', 'Lanes', 'Speed_kmph']
         X = filtered_df[features]
-        le_y = LabelEncoder()
-        y = le_y.fit_transform(filtered_df['Congestion_Level'])
+        y = le.fit_transform(filtered_df['Congestion_Level'])
 
         preprocessor = ColumnTransformer([
             ('cat', OneHotEncoder(handle_unknown='ignore'), ['City', 'Road_Name', 'Direction'])
         ], remainder='passthrough')
 
+        # --- Optimized RandomForest ---
         rf_model = Pipeline([
             ('preprocessor', preprocessor),
-            ('classifier', RandomForestClassifier(n_estimators=100, random_state=42))
+            ('classifier', RandomForestClassifier(n_estimators=50, n_jobs=-1, random_state=42))
         ])
         rf_model.fit(X, y)
-        rf_preds = rf_model.predict(X)
-        filtered_df['RF_Predicted'] = le.inverse_transform(rf_preds)
+        filtered_df['RF_Predicted'] = le.inverse_transform(rf_model.predict(X))
 
+        # --- Optimized XGBoost ---
         xgb_model = Pipeline([
             ('preprocessor', preprocessor),
-            ('classifier', XGBClassifier(use_label_encoder=False, eval_metric='mlogloss', random_state=42))
+            ('classifier', XGBClassifier(use_label_encoder=False, eval_metric='mlogloss', n_jobs=-1, random_state=42))
         ])
         xgb_model.fit(X, y)
-        xgb_preds = xgb_model.predict(X)
-        filtered_df['XGB_Predicted'] = le_y.inverse_transform(xgb_preds)
+        filtered_df['XGB_Predicted'] = le.inverse_transform(xgb_model.predict(X))
 
         st.markdown("### 🤖 Congestion Predictions")
         st.dataframe(filtered_df[['Timestamp', 'City', 'Road_Name', 'Speed_kmph', 'Congestion_Level', 'RF_Predicted', 'XGB_Predicted']].head())
 
+        # --- Visualizations ---
         col1, col2 = st.columns(2)
         with col1:
             st.markdown("#### Random Forest")
@@ -113,7 +121,9 @@ if uploaded_file:
         }
         map_center = city_coords.get(selected_city, [20.5937, 78.9629])
         m = folium.Map(location=map_center, zoom_start=12)
-        for _, row in filtered_df.iterrows():
+
+        # Limit markers to prevent lag
+        for _, row in filtered_df.head(50).iterrows():
             color = 'green' if row['XGB_Predicted'] == 'Low' else 'orange' if row['XGB_Predicted'] == 'Moderate' else 'red'
             folium.CircleMarker(
                 location=map_center,
@@ -124,14 +134,6 @@ if uploaded_file:
                 fill_opacity=0.7
             ).add_to(m)
         st_folium(m, width=700, height=450)
-
-        # --- Real-Time Section (Mocked with summary) ---
-        st.markdown("### 📡 Real-Time Traffic (Mocked)")
-        st.info("🚧 Live HERE API integration will be added in future versions.")
-        st.success(f"Current prediction summary: "
-                   f"{(filtered_df['XGB_Predicted'] == 'Low').sum()} Low, "
-                   f"{(filtered_df['XGB_Predicted'] == 'Moderate').sum()} Moderate, "
-                   f"{(filtered_df['XGB_Predicted'] == 'High').sum()} High")
 
         # --- Download Option ---
         st.download_button(
@@ -145,14 +147,3 @@ if uploaded_file:
 
 else:
     st.warning("⚠️ Please upload a dataset to get started.")
-    with st.expander("📁 Or download a sample dataset"):
-        try:
-            real_data = pd.read_csv("data/xmap_traffic_data.csv")
-            st.download_button(
-                "📥 Download Real Sample Dataset",
-                data=real_data.to_csv(index=False),
-                file_name="real_traffic_dataset.csv",
-                mime="text/csv"
-            )
-        except Exception as e:
-            st.error("🚫 Could not load sample dataset from /data/ folder.")
